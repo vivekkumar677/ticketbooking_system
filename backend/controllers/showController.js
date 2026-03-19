@@ -33,16 +33,40 @@ const getAllShows = async (req, res) => {
   }
 };
 
+// const getShowById = async (req, res) => {
+//   const { id } = req.params;
+
+//   try {
+//     const show = await Show.findById(id).lean(); // fetch show
+//     if (!show) return res.status(404).json({ error: "Show not found" });
+
+//     // optional: include booked seats
+//     const bookedSeats = await Seat.find({ show: id, isBooked: true }).select("_id seatNumber");
+//     show.bookedSeats = bookedSeats.map(s => s._id);
+
+//     res.status(200).json(show);
+//   } catch (err) {
+//     console.error("Error fetching show:", err);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
+
 const getShowById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const show = await Show.findById(id).lean(); // fetch show
+    const show = await Show.findById(id).lean();
     if (!show) return res.status(404).json({ error: "Show not found" });
 
-    // optional: include booked seats
-    const bookedSeats = await Seat.find({ show: id, isBooked: true }).select("_id seatNumber");
-    show.bookedSeats = bookedSeats.map(s => s._id);
+    // Fetch all seats for this show
+    const seats = await Seat.find({ show_id: id }).select("_id seat_number isBooked").lean();
+
+    // Map to frontend-friendly format
+    show.seats = seats.map(s => ({
+      _id: s._id,
+      seatNumber: s.seat_number,
+      isBooked: s.isBooked || false,
+    }));
 
     res.status(200).json(show);
   } catch (err) {
