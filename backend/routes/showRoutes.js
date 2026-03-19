@@ -4,5 +4,6 @@ const showController = require('../controllers/showController');
 
 router.post("/", showController.createShow);
 router.get("/", showController.getAllShows);    
+router.get("/:id", showController.getShowById);
 
 module.exports = router;
