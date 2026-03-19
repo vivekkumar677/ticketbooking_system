@@ -30,13 +30,21 @@ const BookingPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchShow().finally(() => setLoading(false));
     if (!id) return;
-    setLoading(true);
-    fetchShowById(id)
-      .then(res => setShow(res.data))
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetchShowById(id);
+        setShow(res.data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [id]);
 
   const handleBooking = async () => {
