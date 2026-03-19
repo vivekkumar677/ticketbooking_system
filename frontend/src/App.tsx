@@ -1,26 +1,38 @@
+// src/App.tsx
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { getTheme } from './theme/theme';
+import { AppProvider, useAppContext } from './context/AppContext';
 
-function App() {
+import Navbar from './components/Navbar';
+import ShowList from './pages/ShowList';
+import AdminDashboard from './pages/AdminDashboard';
+import CreateShow from './pages/CreateShow';
+import BookingPage from './pages/BookingPage';
+
+const AppWrapper = () => {
+  const { darkMode } = useAppContext();
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={getTheme(darkMode)}>
+      <CssBaseline />
+      <Router>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<ShowList />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/create" element={<CreateShow />} />
+          <Route path="/bookings/:id" element={<BookingPage />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
-}
+};
+
+const App: React.FC = () => (
+  <AppProvider>
+    <AppWrapper />
+  </AppProvider>
+);
 
 export default App;
