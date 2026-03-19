@@ -1,22 +1,15 @@
+
 require('dotenv').config();
 
-const { Pool } = require('pg');
+const mongoose = require('mongoose');
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: isProduction
-    ? { rejectUnauthorized: false }
-    : false, // ✅ no SSL for local
-});
-
-pool.connect((err) => {
-    if (err) {
-        console.error('⚠️Database connection error', err);
-    } else {
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URL);
         console.log('✅ Connected to the database successfully');
+    } catch (err) {
+        console.error('⚠️Database connection error', err);
     }
-});
+};
 
-module.exports = pool;
+module.exports = connectDB;

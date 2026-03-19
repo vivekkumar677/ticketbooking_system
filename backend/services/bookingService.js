@@ -1,58 +1,49 @@
-const pool = require("../config/db");
+const mongoose = require("mongoose");
+const Seat = require("../models/SeatModel");
+const Booking = require("../models/BookingModel");
 
 const bookSeats = async (showId, seatNumbers) => {
-  const client = await pool.connect();
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    await client.query("BEGIN");
+    // Step 1: Get available seats
+    const seats = await Seat.find({
+      show_id: showId,
+      seat_number: { $in: seatNumbers },
+      status: "AVAILABLE"
+    }).session(session);
 
-    const seats = await client.query(
-      `SELECT * FROM seats
-       WHERE show_id = $1 AND seat_number = ANY($2)
-       FOR UPDATE`,
-      [showId, seatNumbers],
+    if (seats.length !== seatNumbers.length) {
+      throw new Error("Some seats are already booked");
+    }
+
+    const seatIds = seats.map(s => s._id);
+
+    // Step 2: Lock seats
+    await Seat.updateMany(
+      { _id: { $in: seatIds } },
+      { status: "HELD" },
+      { session }
     );
 
-    if (seats.rows.length !== seatNumbers.length) {
-      throw new Error("Invalid seats");
-    }
+    // Step 3: Create booking
+    const booking = await Booking.create([{
+      show_id: showId,
+      seats: seatIds,
+      status: "PENDING"
+    }], { session });
 
-    const alreadyBooked = seats.rows.some((s) => s.is_booked);
-    if (alreadyBooked) {
-      throw new Error("Seats already booked");
-    }
+    await session.commitTransaction();
+    session.endSession();
 
-    const booking = await client.query(
-      `INSERT INTO bookings(show_id, status)
-       VALUES($1,'CONFIRMED') RETURNING *`,
-      [showId],
-    );
+    return booking[0];
 
-    const bookingId = booking.rows[0].id;
-
-    for (let seat of seats.rows) {
-      await client.query(
-        `INSERT INTO booking_seats(booking_id, seat_id)
-         VALUES($1,$2)`,
-        [bookingId, seat.id],
-      );
-    }
-
-    await client.query(`UPDATE seats SET is_booked = true WHERE id = ANY($1)`, [
-      seats.rows.map((s) => s.id),
-    ]);
-
-    await client.query("COMMIT");
-
-    return booking.rows[0];
   } catch (err) {
-    await client.query("ROLLBACK");
+    await session.abortTransaction();
+    session.endSession();
     throw err;
-  } finally {
-    client.release();
   }
 };
 
-module.exports = {
-  bookSeats,
-};
+module.exports = { bookSeats };
