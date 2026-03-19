@@ -33,28 +33,35 @@ const getAllShows = async (req, res) => {
   }
 };
 
+
 const getShowById = async (req, res) => {
   const { id } = req.params;
 
   try {
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: "Invalid show ID" });
+    }
+
     const show = await Show.findById(id).lean();
     if (!show) return res.status(404).json({ error: "Show not found" });
 
-    // include all seats with status
     const seats = await Seat.find({ show_id: id }).select("_id seat_number status").lean();
+
     show.seats = seats.map(s => ({
       _id: s._id,
-      seat_number: s.seat_number,
-      status: s.status === "BOOKED"
+      seatNumber: s.seat_number,
+      isBooked: s.status === "BOOKED" || s.status === true
     }));
 
-    // optionally, include booked seats array
-    show.bookedSeats = seats.filter(s => s.status === "BOOKED").map(s => s.seat_number);
-
-    res.status(200).json(show);
+    show.bookedSeats = seats
+      .filter(s => s.status === "BOOKED" || s.status === true)
+      .map(s => s.seat_number);
+      
+    console.log("Returning show:", JSON.stringify(show, null, 2));
+    return res.status(200).json(show);
   } catch (err) {
-    console.error("Error fetching show:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error fetching show:", err.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
