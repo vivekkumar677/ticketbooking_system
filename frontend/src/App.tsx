@@ -10,6 +10,7 @@ import ShowList from './pages/ShowList';
 import AdminDashboard from './pages/AdminDashboard';
 import CreateShow from './pages/CreateShow';
 import BookingPage from './pages/BookingPage';
+import Footer from './pages/Footer';
 
 const AppWrapper = () => {
   const { darkMode } = useAppContext();
@@ -24,6 +25,7 @@ const AppWrapper = () => {
           <Route path="/admin/create" element={<CreateShow />} />
           <Route path="/bookings/:id" element={<BookingPage />} />
         </Routes>
+        <Footer />
       </Router>
     </ThemeProvider>
   );

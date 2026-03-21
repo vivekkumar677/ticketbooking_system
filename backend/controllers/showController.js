@@ -33,7 +33,6 @@ const getAllShows = async (req, res) => {
   }
 };
 
-
 const getShowById = async (req, res) => {
   const { id } = req.params;
 
@@ -56,7 +55,7 @@ const getShowById = async (req, res) => {
     show.bookedSeats = seats
       .filter(s => s.status === "BOOKED" || s.status === true)
       .map(s => s.seat_number);
-      
+
     console.log("Returning show:", JSON.stringify(show, null, 2));
     return res.status(200).json(show);
   } catch (err) {
